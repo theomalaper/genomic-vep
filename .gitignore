@@ -1,0 +1,33 @@
+# Data (too large for git)
+data/*
+*.bin
+*.fa
+*.fa.gz
+*.fai
+*.vcf
+*.vcf.gz
+*.vcf.gz.tbi
+
+# Model checkpoints
+*.pth
+*.pt
+*.safetensors
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Environment
+.env
+
+# Node
+node_modules/
+.next/
+
+# OS
+.DS_Store
+
+# Logs
+run.log
