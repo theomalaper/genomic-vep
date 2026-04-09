@@ -23,3 +23,21 @@ Start planning from the outcome (health tech portfolio piece), not the tool (aut
 
 **Next:** Start Day 1 — ClinVar data pipeline.
 
+
+## Day 1 — 2026-04-03 to 2026-04-09 (Data Pipeline)
+
+**What happened:**
+Built the full data pipeline. Took longer than expected due to flaky reference genome downloads.
+
+**Completed:**
+- Parsed ClinVar VCF → 350,599 SNVs (110k pathogenic, 240k benign)
+- Downloaded GRCh38 reference genome, recompressed with bgzip + indexed for random access
+- Extracted 1001bp DNA windows per variant, split by chromosome into train/val/test parquets
+
+**Output:** `train.parquet` (98MB, chr1-16), `val.parquet` (7.4MB, chr17), `test.parquet` (22MB, chr18-22+X)
+
+**Lesson learned:**
+Don't over-engineer download scripts. Manual browser download beat 50 lines of retry logic.
+
+**Next:** Day 2 — Tokenization + PyTorch Dataset.
+
