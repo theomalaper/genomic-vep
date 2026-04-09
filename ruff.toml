@@ -1,0 +1,9 @@
+target-version = "py312"
+line-length = 120
+
+[lint]
+select = ["E", "F", "I", "W"]
+# E = pycodestyle errors, F = pyflakes, I = isort (import sorting), W = warnings
+
+[format]
+quote-style = "double"

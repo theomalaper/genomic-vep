@@ -35,8 +35,8 @@ def prepare_reference_data():
         return
 
     if not os.path.exists(GZ_DOWNLOAD_PATH) and not os.path.exists(FA_PATH):
-        print(f"ERROR: Please download the reference genome first.")
-        print(f"  1. Download from: https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz")
+        print("ERROR: Please download the reference genome first.")
+        print("  1. Download from: https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz")
         print(f"  2. Place it at: {os.path.abspath(GZ_DOWNLOAD_PATH)}")
         return
 

@@ -9,10 +9,10 @@ Output: data/clinvar_variants.csv with columns:
     chrom, pos, ref, alt, label (1 = pathogenic, 0 = benign)
 """
 
+import csv
 import gzip
 import os
 import urllib.request
-import csv
 
 # ClinVar VCF — updated weekly by NCBI
 CLINVAR_URL = "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar.vcf.gz"
@@ -50,7 +50,7 @@ def parse_clinvar():
     # CLNSIG field labels
     PATHOGENIC_LABELS = {"Pathogenic", "Pathogenic/Likely_pathogenic"}
     BENIGN_LABELS = {"Benign", "Benign/Likely_benign"}
-    
+
     PATHOGENIC_VAL = 1
     BENIGN_VAL = 0
 
@@ -72,7 +72,7 @@ def parse_clinvar():
                 continue
 
             # Only single nucleotide variants (not insertions/deletions)
-            if len(ref) != 1 or len(alt) != 1: 
+            if len(ref) != 1 or len(alt) != 1:
                 continue
 
             # Only valid DNA bases
@@ -104,7 +104,7 @@ def parse_clinvar():
             })
 
     print(f"Found {len(variants)} variants:")
-    
+
     pathogenic_count = sum(1 for v in variants if v["label"] == PATHOGENIC_VAL)
     benign_count = len(variants) - pathogenic_count
     print(f"  Pathogenic: {pathogenic_count}")

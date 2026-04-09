@@ -81,14 +81,42 @@ Once DNA is tokenized, each token gets converted into a **vector** (a list of nu
 
 The magic: NT-v2 was pre-trained on billions of DNA sequences, so its embeddings already encode meaningful information about DNA. A token that appears in a promoter region will have a different embedding than the same token in junk DNA — because the model learned from context.
 
-### What is a DataLoader?
+### Why use a transformer instead of classifying raw sequences directly?
 
-A DataLoader is a PyTorch utility that:
-1. Grabs a batch of examples from your dataset (e.g., 32 variants at a time)
-2. Shuffles them (so the model doesn't learn the order)
-3. Feeds them to the model during training
+You could skip the transformer and classify raw DNA directly — one-hot encode each base (A=1000, C=0100, etc.) and feed it to a simple neural network. But this performs poorly because:
 
-It's just plumbing — not conceptually deep, but you need to set it up correctly.
+1. **No context:** Each base is treated independently. The model has to learn from scratch that `GT-AG` at certain positions signals a splice site, that `TATAAA` is a promoter motif, etc.
+2. **Not enough data:** With only 350k labeled variants, a model can't discover all the complex patterns that determine pathogenicity.
+
+The transformer solves this because it was pre-trained (unsupervised) on billions of DNA sequences. It already knows what "normal" DNA looks like — splice sites, conserved regions, regulatory motifs. The embedding doesn't just say "this is a G" — it says "this is a G that's part of a conserved splice donor site near an exon boundary." All that biological context comes for free, and we just train a small classifier on top.
+
+### How tokenization works in code
+
+The tokenizer takes a 1001bp DNA string and returns two things:
+- **input_ids** — integer IDs for each 6-mer chunk, e.g. `[CLS, 1247, 3891, ..., PAD, PAD]`
+- **attention_mask** — `[1, 1, 1, ..., 0, 0]` (1 = real token, 0 = padding to ignore)
+
+We pad all sequences to 256 tokens (nearest power-of-2 above ~167 tokens). GPUs are optimized for power-of-2 dimensions, and all tensors in a batch must be the same length.
+
+### From token IDs to embeddings
+
+Each token ID individually maps to its own 768-dimensional embedding vector. A sequence of 167 tokens produces 167 separate embeddings — shape `(167, 768)`.
+
+These per-token embeddings are then **mean-pooled** (averaged) into a single 768-dim vector representing the whole sequence. This is what gets fed to the classification head.
+
+### Pre-training vs fine-tuning: who does what?
+
+- **Pre-training (InstaDeep, not us):** Unsupervised. The model read billions of DNA sequences and learned to predict masked bases (fill-in-the-blank). It has no idea what "pathogenic" means — it just learned what DNA normally looks like.
+- **Fine-tuning (us):** Supervised. We add a classification head, provide ClinVar labels, and train it to map embeddings → pathogenic/benign. The base model's DNA knowledge is frozen; we only train the small head on top.
+
+### What is a Dataset and DataLoader?
+
+A **Dataset** defines how to access one sample — load a row from the parquet file, tokenize the ref and alt sequences, return tensors.
+
+A **DataLoader** wraps the Dataset and handles batching:
+1. Groups samples together (e.g. 32 at a time) so the GPU processes them in parallel
+2. Shuffles training data each epoch so the model doesn't memorize ordering (val/test stay unshuffled for reproducible evaluation)
+3. Provides an iterator for the training loop: `for batch in train_loader:`
 
 ---
 

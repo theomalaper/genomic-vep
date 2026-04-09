@@ -13,10 +13,11 @@ Why split by chromosome?
     Splitting by chromosome guarantees zero overlap between train/val/test.
 """
 
-import os
 import csv
-import pysam
+import os
+
 import pandas as pd
+import pysam
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
 CLINVAR_CSV = os.path.join(DATA_DIR, "clinvar_variants.csv")
@@ -34,14 +35,14 @@ TEST_CHROMOSOMES = {str(chrom) for chrom in range(18, 23)} | {"X"}
 def load_variants():
     """Load parsed ClinVar variants from CSV."""
     variants = []
-    
+
     with open(CLINVAR_CSV, "r") as variant_file:
         reader = csv.DictReader(variant_file)
         for row in reader:
             row["pos"] = int(row["pos"])
             row["label"] = int(row["label"])
             variants.append(row)
-    
+
     print(f"Loaded {len(variants)} variants from {CLINVAR_CSV}")
     return variants
 
@@ -129,7 +130,7 @@ def split_and_save(records):
 
     overall_pathogenic_rate = df["label"].mean()
 
-    print(f"\nSplit sizes:")
+    print("\nSplit sizes:")
     print(f"  Train: {len(train)} ({train['label'].mean():.1%} pathogenic)")
     print(f"  Val:   {len(val)} ({val['label'].mean():.1%} pathogenic)")
     print(f"  Test:  {len(test)} ({test['label'].mean():.1%} pathogenic)")
@@ -148,14 +149,14 @@ def split_and_save(records):
 
     # Report the data format so downstream code knows what to expect
     print(f"\nSaved to {DATA_DIR}/{{train,val,test}}.parquet")
-    print(f"\nRecord format (columns per row):")
-    print(f"  chrom      — chromosome number (str, e.g. '7')")
-    print(f"  pos        — genomic position (int, 1-based)")
-    print(f"  ref_allele — normal base (str, e.g. 'A')")
-    print(f"  alt_allele — mutated base (str, e.g. 'G')")
-    print(f"  label      — 1 = pathogenic, 0 = benign (int)")
-    print(f"  ref_seq    — 1001bp reference DNA window (str)")
-    print(f"  alt_seq    — 1001bp alternate DNA window (str)")
+    print("\nRecord format (columns per row):")
+    print("  chrom      — chromosome number (str, e.g. '7')")
+    print("  pos        — genomic position (int, 1-based)")
+    print("  ref_allele — normal base (str, e.g. 'A')")
+    print("  alt_allele — mutated base (str, e.g. 'G')")
+    print("  label      — 1 = pathogenic, 0 = benign (int)")
+    print("  ref_seq    — 1001bp reference DNA window (str)")
+    print("  alt_seq    — 1001bp alternate DNA window (str)")
 
 
 if __name__ == "__main__":
