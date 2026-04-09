@@ -15,32 +15,30 @@ Why split by chromosome?
 
 import os
 import csv
-
 import pysam
 import pandas as pd
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
 CLINVAR_CSV = os.path.join(DATA_DIR, "clinvar_variants.csv")
-REFERENCE_PATH = os.path.join(DATA_DIR, "hg38.fa.gz")
+REFERENCE_PATH = os.path.join(DATA_DIR, "hg38.bgz")
 
-# How much DNA context to include on each side of the variant
-WINDOW_SIZE = 500  # 500 on each side = 1000bp total + 1 for the variant itself
-
-# Chromosome splits — no overlap between train/val/test
-TRAIN_CHROMS = {str(i) for i in range(1, 17)}       # chr1-16
-VAL_CHROMS = {"17"}                                   # chr17
-TEST_CHROMS = {str(i) for i in range(18, 23)} | {"X"} # chr18-22 + X
+DNA_WINDOW_SIZE = 500  # 500 on each side = 1000bp total + 1 for the variant itself
+TRAIN_CHROMOSOMES = {str(chrom) for chrom in range(1, 17)}
+VAL_CHROMOSOMES = {"17"}
+TEST_CHROMOSOMES = {str(chrom) for chrom in range(18, 23)} | {"X"}
 
 
 def load_variants():
     """Load parsed ClinVar variants from CSV."""
     variants = []
-    with open(CLINVAR_CSV, "r") as f:
-        reader = csv.DictReader(f)
+    
+    with open(CLINVAR_CSV, "r") as variant_file:
+        reader = csv.DictReader(variant_file)
         for row in reader:
             row["pos"] = int(row["pos"])
             row["label"] = int(row["label"])
             variants.append(row)
+    
     print(f"Loaded {len(variants)} variants from {CLINVAR_CSV}")
     return variants
 
@@ -56,68 +54,64 @@ def extract_windows(variants):
 
     Returns a list of dicts with: chrom, pos, ref, alt, label, ref_seq, alt_seq
     """
+
     print("Opening reference genome...")
-    ref_genome = pysam.FastaFile(REFERENCE_PATH)
+    reference_genome = pysam.FastaFile(REFERENCE_PATH)
 
     # Check which chromosome naming convention the reference uses
     # UCSC uses "chr1", ClinVar uses "1" — we need to handle both
-    ref_chroms = set(ref_genome.references)
+    ref_chroms = set(reference_genome.references)
     uses_chr_prefix = "chr1" in ref_chroms
 
     records = []
     skipped = 0
 
-    for i, var in enumerate(variants):
-        if i % 5000 == 0 and i > 0:
-            print(f"  Processed {i}/{len(variants)} variants...")
+    for index, variant in enumerate(variants):
+        if index % 50000 == 0 and index > 0:
+            print(f"  Processed {index}/{len(variants)} variants...")
 
-        chrom = var["chrom"]
-        pos = var["pos"]
-
-        # Convert to reference genome's naming convention
+        chrom = variant["chrom"]
+        pos = variant["pos"]
         ref_chrom = f"chr{chrom}" if uses_chr_prefix else chrom
 
-        # Check chromosome exists in reference
         if ref_chrom not in ref_chroms:
             skipped += 1
             continue
 
-        chrom_length = ref_genome.get_reference_length(ref_chrom)
+        chrom_length = reference_genome.get_reference_length(ref_chrom)
 
         # Calculate window boundaries
         # pos is 1-based in VCF, pysam uses 0-based
-        center = pos - 1  # convert to 0-based
-        start = center - WINDOW_SIZE
-        end = center + WINDOW_SIZE + 1  # +1 to include the variant base
+        dna_sequence_center = pos - 1  # convert to 0-based
+        dna_sequence_start = dna_sequence_center - DNA_WINDOW_SIZE
+        dna_sequence_end = dna_sequence_center + DNA_WINDOW_SIZE + 1  # +1 to include the variant base
 
-        # Skip if too close to chromosome edges
-        if start < 0 or end > chrom_length:
+        if dna_sequence_start < 0 or dna_sequence_end > chrom_length:
             skipped += 1
             continue
 
-        # Extract the reference sequence
-        ref_seq = ref_genome.fetch(ref_chrom, start, end).upper()
+        ref_seq = reference_genome.fetch(ref_chrom, dna_sequence_start, dna_sequence_end).upper()
 
         # Sanity check: the base at the center should match the ref allele
-        center_idx = WINDOW_SIZE  # index of the variant in the window
-        if ref_seq[center_idx] != var["ref"]:
+        center_index = DNA_WINDOW_SIZE
+        if ref_seq[center_index] != variant["ref"]:
             skipped += 1
             continue
 
-        # Create the alternate sequence by swapping the variant base
-        alt_seq = ref_seq[:center_idx] + var["alt"] + ref_seq[center_idx + 1:]
+        alt_seq = ref_seq[:center_index] + variant["alt"] + ref_seq[center_index + 1:]
 
+        # Should the data format be reported anywhere?
         records.append({
             "chrom": chrom,
             "pos": pos,
-            "ref_allele": var["ref"],
-            "alt_allele": var["alt"],
-            "label": var["label"],
+            "ref_allele": variant["ref"],
+            "alt_allele": variant["alt"],
+            "label": variant["label"],
             "ref_seq": ref_seq,
             "alt_seq": alt_seq,
         })
 
-    ref_genome.close()
+    reference_genome.close()
 
     print(f"Extracted {len(records)} windows, skipped {skipped} variants")
     return records
@@ -127,10 +121,11 @@ def split_and_save(records):
     """Split records by chromosome and save as parquet files."""
     df = pd.DataFrame(records)
 
-    train = df[df["chrom"].isin(TRAIN_CHROMS)]
-    val = df[df["chrom"].isin(VAL_CHROMS)]
-    test = df[df["chrom"].isin(TEST_CHROMS)]
+    train = df[df["chrom"].isin(TRAIN_CHROMOSOMES)]
+    val = df[df["chrom"].isin(VAL_CHROMOSOMES)]
+    test = df[df["chrom"].isin(TEST_CHROMOSOMES)]
 
+    # Should there be a detection for too much pathogenic in any files?
     print(f"\nSplit sizes:")
     print(f"  Train: {len(train)} ({train['label'].mean():.1%} pathogenic)")
     print(f"  Val:   {len(val)} ({val['label'].mean():.1%} pathogenic)")
