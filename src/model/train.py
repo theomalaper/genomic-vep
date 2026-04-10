@@ -6,9 +6,10 @@ Uses BCEWithLogitsLoss with class weighting to handle the ~31/69 pathogenic/beni
 Evaluates AUROC on the validation set each epoch.
 """
 
+import argparse
 import os
 import sys
-import argparse
+
 import torch
 import torch.nn as nn
 import wandb
@@ -25,7 +26,10 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.ba
 SAVE_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "checkpoints")
 
 
-def save_checkpoint(model: VariantClassifier, optimizer: torch.optim.Optimizer, epoch: int, val_auroc: float, path: str) -> None:
+def save_checkpoint(
+    model: VariantClassifier, optimizer: torch.optim.Optimizer,
+    epoch: int, val_auroc: float, path: str,
+) -> None:
     torch.save({
         "head_state_dict": model.head.state_dict(),
         "optimizer_state_dict": optimizer.state_dict(),
@@ -41,7 +45,10 @@ def load_checkpoint(path: str, model: VariantClassifier, optimizer: torch.optim.
     return ckpt["epoch"], ckpt["val_auroc"]
 
 
-def train(epochs: int = 5, batch_size: int = 32, lr: float = 1e-3, pos_weight: float = 2.0, checkpoint: str | None = None) -> VariantClassifier:
+def train(
+    epochs: int = 5, batch_size: int = 32, lr: float = 1e-3,
+    pos_weight: float = 2.0, checkpoint: str | None = None,
+) -> VariantClassifier:
     """
     Train the classifier.
 
@@ -165,4 +172,7 @@ if __name__ == "__main__":
     parser.add_argument("--checkpoint", type=str, default=None, help="path to checkpoint to resume from")
     args = parser.parse_args()
 
-    train(epochs=args.epochs, batch_size=args.batch_size, lr=args.lr, pos_weight=args.pos_weight, checkpoint=args.checkpoint)
+    train(
+        epochs=args.epochs, batch_size=args.batch_size,
+        lr=args.lr, pos_weight=args.pos_weight, checkpoint=args.checkpoint,
+    )
