@@ -11,6 +11,7 @@ import sys
 
 import torch
 import torch.nn as nn
+import wandb
 from sklearn.metrics import roc_auc_score
 from torch.utils.data import DataLoader
 
@@ -36,6 +37,11 @@ def train(epochs: int = 5, batch_size: int = 32, lr: float = 1e-3, pos_weight: f
                     to compensate for class imbalance — ~31% pathogenic vs ~69% benign)
     """
     os.makedirs(SAVE_DIR, exist_ok=True)
+
+    wandb.init(
+        project="genomic-vep",
+        config={"epochs": epochs, "batch_size": batch_size, "lr": lr, "pos_weight": pos_weight, "device": str(DEVICE)},
+    )
 
     print(f"Device: {DEVICE}")
     print(f"Epochs: {epochs}, Batch size: {batch_size}, LR: {lr}, Pos weight: {pos_weight}")
@@ -79,12 +85,14 @@ def train(epochs: int = 5, batch_size: int = 32, lr: float = 1e-3, pos_weight: f
 
             if num_batches % 100 == 0:
                 print(f"  Epoch {epoch} | Batch {num_batches} | Loss: {loss.item():.4f}")
+                wandb.log({"batch_loss": loss.item()})
 
         avg_loss = total_loss / num_batches
 
         # --- Validation ---
         val_auroc = evaluate(model, val_loader)
 
+        wandb.log({"epoch": epoch, "train_loss": avg_loss, "val_auroc": val_auroc})
         print(f"Epoch {epoch}/{epochs} | Train loss: {avg_loss:.4f} | Val AUROC: {val_auroc:.4f}")
 
         # Save best model
@@ -94,6 +102,8 @@ def train(epochs: int = 5, batch_size: int = 32, lr: float = 1e-3, pos_weight: f
             torch.save(model.head.state_dict(), save_path)
             print(f"  Saved best model (AUROC: {best_auroc:.4f})")
 
+    wandb.log({"best_val_auroc": best_auroc})
+    wandb.finish()
     print(f"\nTraining complete. Best Val AUROC: {best_auroc:.4f}")
     return model
 
