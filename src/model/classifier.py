@@ -14,7 +14,7 @@ If they shift dramatically → variant likely disrupts something important.
 
 import torch
 import torch.nn as nn
-from transformers import AutoModel
+from transformers import AutoModelForMaskedLM
 
 MODEL_NAME = "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species"
 
@@ -25,8 +25,11 @@ class VariantClassifier(nn.Module):
     def __init__(self, dropout: float = 0.1) -> None:
         super().__init__()
 
-        # Load pre-trained NT-v2 and freeze all parameters
-        self.encoder = AutoModel.from_pretrained(MODEL_NAME, trust_remote_code=True)
+        # Load the full masked LM, then extract just the base encoder
+        full_model = AutoModelForMaskedLM.from_pretrained(MODEL_NAME, trust_remote_code=True)
+        self.encoder = full_model.esm
+        del full_model
+
         for param in self.encoder.parameters():
             param.requires_grad = False
 
