@@ -1,8 +1,0 @@
-# Colab-specific: only packages NOT pre-installed on Colab.
-# Colab already has torch, numpy, pandas, scikit-learn, matplotlib.
-# Do NOT install those here — it breaks binary compatibility.
-transformers>=4.40,<5.0.0
-datasets>=2.18
-pysam>=0.22
-captum>=0.7
-wandb>=0.16
