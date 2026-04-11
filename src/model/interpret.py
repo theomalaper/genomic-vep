@@ -8,7 +8,6 @@ gets its own attribution score. We wrap the classifier's forward pass to accept
 raw embeddings and do pooling + head internally.
 """
 
-import numpy as np
 import torch
 from captum.attr import IntegratedGradients
 from transformers import AutoTokenizer
