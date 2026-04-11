@@ -41,3 +41,24 @@ Don't over-engineer download scripts. Manual browser download beat 50 lines of r
 
 **Next:** Day 2 — Tokenization + PyTorch Dataset.
 
+
+## Day 2-3 — 2026-04-10 to 2026-04-11 (Model + Training)
+
+**What happened:**
+Built the classifier and training loop. Ran training on Colab T4 — first run reached 0.80 AUROC by epoch 3 before the session disconnected. Checkpoint was lost because we only saved the best model, not every epoch.
+
+**Completed:**
+- VariantClassifier: frozen NT-v2 encoder + trainable 2-layer head (~197K params)
+- Training loop with wandb logging, BCEWithLogitsLoss (pos_weight=2.0 for class imbalance)
+- Robust checkpointing: saves latest.pth every epoch + best.pth on improvement, auto-resumes
+- Colab notebook with wandb login, GPU verification, Drive data copy
+- Interpretability module (integrated gradients via Captum) — attributes prediction to individual tokens
+
+**Key fix:**
+Added full checkpoint saving (head weights + optimizer state + epoch + AUROC) after losing 3 epochs of training to a Colab disconnect. Now auto-resumes from latest.pth.
+
+**Lesson learned:**
+Always save checkpoints every epoch on Colab — sessions die without warning. Save optimizer state too, not just weights.
+
+**Next:** Day 4 — FastAPI backend + Next.js frontend.
+
