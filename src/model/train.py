@@ -42,7 +42,7 @@ def save_checkpoint(
 
 
 def load_checkpoint(path: str, model: VariantClassifier, optimizer: torch.optim.Optimizer) -> tuple[int, float]:
-    ckpt = torch.load(path, map_location=DEVICE)
+    ckpt = torch.load(path, map_location=DEVICE, weights_only=False)
     model.head.load_state_dict(ckpt["head_state_dict"])
     optimizer.load_state_dict(ckpt["optimizer_state_dict"])
     return ckpt["epoch"], ckpt["val_auroc"]
