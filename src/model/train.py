@@ -23,7 +23,10 @@ from src.data.dataset import create_dataloaders
 from src.model.classifier import VariantClassifier
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
-SAVE_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "checkpoints")
+SAVE_DIR = os.environ.get(
+    "CHECKPOINT_DIR",
+    os.path.join(os.path.dirname(__file__), "..", "..", "checkpoints"),
+)
 
 
 def save_checkpoint(
