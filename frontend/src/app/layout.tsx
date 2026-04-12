@@ -14,7 +14,21 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Genomic VEP — Variant Effect Predictor",
-  description: "Predict whether DNA variants are pathogenic or benign using deep learning",
+  description:
+    "Predict whether DNA variants are pathogenic or benign using a fine-tuned Nucleotide Transformer with per-token interpretability.",
+  openGraph: {
+    title: "Genomic VEP — Variant Effect Predictor",
+    description:
+      "Deep learning variant effect prediction with Nucleotide Transformer v2 and Integrated Gradients interpretability. Trained on ClinVar.",
+    type: "website",
+    siteName: "Genomic VEP",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Genomic VEP — Variant Effect Predictor",
+    description:
+      "Deep learning variant effect prediction with Nucleotide Transformer v2 and Integrated Gradients interpretability.",
+  },
 };
 
 export default function RootLayout({

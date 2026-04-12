@@ -225,7 +225,7 @@ export default function Home() {
         </div>
 
         {/* REF + ALT side by side */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           <div>
             <label htmlFor="ref-seq" className="flex items-center gap-2 text-xs font-medium mb-1.5" style={{ color: "var(--foreground)" }}>
               <span className="text-[10px] px-1.5 py-0.5 rounded font-mono" style={{ background: "rgba(91,141,239,0.12)", color: "var(--accent)" }}>
@@ -233,13 +233,18 @@ export default function Home() {
               </span>
               Reference Sequence
             </label>
-            <textarea
-              id="ref-seq"
-              value={refSeq}
-              onChange={(e) => setRefSeq(e.target.value)}
-              placeholder="ATCGATCGATCG..."
-              className="input-field h-20"
-            />
+            <div className="relative">
+              <textarea
+                id="ref-seq"
+                value={refSeq}
+                onChange={(e) => setRefSeq(e.target.value)}
+                placeholder="ATCGATCGATCG..."
+                className="input-field h-20 pr-16"
+              />
+              <span className="absolute bottom-2 right-3 text-[10px] font-mono pointer-events-none" style={{ color: "var(--subtle)" }}>
+                {refSeq.length.toLocaleString()} bp
+              </span>
+            </div>
           </div>
           <div>
             <label htmlFor="alt-seq" className="flex items-center gap-2 text-xs font-medium mb-1.5" style={{ color: "var(--foreground)" }}>
@@ -248,13 +253,18 @@ export default function Home() {
               </span>
               Alternate Sequence
             </label>
-            <textarea
-              id="alt-seq"
-              value={altSeq}
-              onChange={(e) => setAltSeq(e.target.value)}
-              placeholder="ATCGATCAATCG..."
-              className="input-field h-20"
-            />
+            <div className="relative">
+              <textarea
+                id="alt-seq"
+                value={altSeq}
+                onChange={(e) => setAltSeq(e.target.value)}
+                placeholder="ATCGATCAATCG..."
+                className="input-field h-20 pr-16"
+              />
+              <span className="absolute bottom-2 right-3 text-[10px] font-mono pointer-events-none" style={{ color: "var(--subtle)" }}>
+                {altSeq.length.toLocaleString()} bp
+              </span>
+            </div>
           </div>
         </div>
 

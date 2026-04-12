@@ -50,7 +50,7 @@ export default function ExampleVariants({ onSelect, disabled }: ExampleVariantsP
       <h3 className="text-[10px] uppercase tracking-widest font-medium mb-2.5" style={{ color: "var(--subtle)" }}>
         Quick examples
       </h3>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {EXAMPLES.map((ex) => (
           <button
             key={ex.name}
