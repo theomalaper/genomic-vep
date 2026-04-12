@@ -8,7 +8,6 @@ interface Example {
   tag: "pathogenic" | "benign";
 }
 
-// Placeholder — real sequences will be populated from the test dataset
 const EXAMPLES: Example[] = [
   {
     name: "BRCA2 Splice Site",
@@ -45,13 +44,10 @@ interface ExampleVariantsProps {
   disabled: boolean;
 }
 
-export default function ExampleVariants({
-  onSelect,
-  disabled,
-}: ExampleVariantsProps) {
+export default function ExampleVariants({ onSelect, disabled }: ExampleVariantsProps) {
   return (
     <div>
-      <h3 className="text-xs uppercase tracking-wider text-slate-500 mb-3">
+      <h3 className="text-[10px] uppercase tracking-widest font-medium mb-2.5" style={{ color: "var(--subtle)" }}>
         Quick examples
       </h3>
       <div className="grid grid-cols-2 gap-2">
@@ -60,23 +56,35 @@ export default function ExampleVariants({
             key={ex.name}
             onClick={() => onSelect(ex.refSeq, ex.altSeq)}
             disabled={disabled || !ex.refSeq}
-            className="group text-left p-3.5 rounded-xl border border-slate-700/50 hover:border-slate-600 bg-slate-800/30 hover:bg-slate-800/60 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            className="group text-left px-3 py-2.5 rounded-lg transition-all disabled:opacity-25 disabled:cursor-not-allowed"
+            style={{
+              background: "rgba(22,32,56,0.4)",
+              border: "1px solid rgba(56,73,113,0.25)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "rgba(91,141,239,0.3)";
+              e.currentTarget.style.background = "rgba(22,32,56,0.7)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "rgba(56,73,113,0.25)";
+              e.currentTarget.style.background = "rgba(22,32,56,0.4)";
+            }}
           >
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="font-medium text-sm text-slate-200 group-hover:text-white transition-colors">
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-xs font-medium" style={{ color: "var(--foreground)" }}>
                 {ex.name}
               </span>
               <span
-                className={`text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
-                  ex.tag === "pathogenic"
-                    ? "bg-red-500/10 text-red-400 ring-1 ring-red-500/20"
-                    : "bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20"
-                }`}
+                className="text-[9px] font-medium uppercase tracking-wider px-1.5 py-px rounded-full"
+                style={{
+                  background: ex.tag === "pathogenic" ? "rgba(239,68,68,0.12)" : "rgba(16,185,129,0.12)",
+                  color: ex.tag === "pathogenic" ? "#f87171" : "#4ade80",
+                }}
               >
                 {ex.tag}
               </span>
             </div>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <p className="text-[11px] leading-snug" style={{ color: "var(--muted)" }}>
               {ex.description}
             </p>
           </button>

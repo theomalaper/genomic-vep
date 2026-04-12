@@ -19,25 +19,22 @@ export default function SequenceDiff({ refSeq, altSeq }: SequenceDiffProps) {
   if (diffCount === 0) return null;
 
   return (
-    <div className="px-4 py-2.5 rounded-lg bg-slate-800/40 border border-slate-700/30 font-mono text-xs">
+    <div className="card px-4 py-2.5 font-mono text-[11px]">
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-[10px] uppercase tracking-wider text-slate-500">Sequence diff</span>
-        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20">
+        <span className="text-[9px] uppercase tracking-widest font-medium" style={{ color: "var(--muted)" }}>Diff</span>
+        <span className="text-[9px] px-1.5 py-px rounded-full font-sans" style={{ background: "rgba(234,179,8,0.12)", color: "#facc15" }}>
           {diffCount} {diffCount === 1 ? "change" : "changes"}
         </span>
       </div>
-      <div className="space-y-1 overflow-x-auto">
+      <div className="space-y-0.5 overflow-x-auto">
         <div className="flex items-center gap-2">
-          <span className="text-slate-600 w-7 shrink-0 text-right">REF</span>
+          <span className="w-6 shrink-0 text-right text-[10px]" style={{ color: "var(--subtle)" }}>REF</span>
           <span className="flex flex-wrap">
             {Array.from({ length: maxLen }).map((_, i) => {
-              const ch = refSeq[i] ?? "–";
+              const ch = refSeq[i] ?? "\u2013";
               const isDiff = i >= minLen || refSeq[i] !== altSeq[i];
               return (
-                <span
-                  key={i}
-                  className={isDiff ? "text-amber-400 bg-amber-500/10 rounded-sm px-px" : "text-slate-500 px-px"}
-                >
+                <span key={i} className="px-px" style={{ color: isDiff ? "#facc15" : "var(--muted)", background: isDiff ? "rgba(234,179,8,0.1)" : "transparent", borderRadius: 2 }}>
                   {ch}
                 </span>
               );
@@ -45,16 +42,13 @@ export default function SequenceDiff({ refSeq, altSeq }: SequenceDiffProps) {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-slate-600 w-7 shrink-0 text-right">ALT</span>
+          <span className="w-6 shrink-0 text-right text-[10px]" style={{ color: "var(--subtle)" }}>ALT</span>
           <span className="flex flex-wrap">
             {Array.from({ length: maxLen }).map((_, i) => {
-              const ch = altSeq[i] ?? "–";
+              const ch = altSeq[i] ?? "\u2013";
               const isDiff = i >= minLen || refSeq[i] !== altSeq[i];
               return (
-                <span
-                  key={i}
-                  className={isDiff ? "text-amber-400 bg-amber-500/10 rounded-sm px-px" : "text-slate-500 px-px"}
-                >
+                <span key={i} className="px-px" style={{ color: isDiff ? "#facc15" : "var(--muted)", background: isDiff ? "rgba(234,179,8,0.1)" : "transparent", borderRadius: 2 }}>
                   {ch}
                 </span>
               );

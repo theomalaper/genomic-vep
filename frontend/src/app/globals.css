@@ -1,8 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0f172a;
-  --foreground: #e2e8f0;
+  --background: #070d1a;
+  --foreground: #d1d5e0;
+  --card: rgba(22, 32, 56, 0.7);
+  --card-border: rgba(56, 73, 113, 0.3);
+  --accent: #5b8def;
+  --muted: #7a869e;
+  --subtle: #4a566e;
 }
 
 @theme inline {
@@ -18,10 +23,108 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
+/* Ambient glow */
+.bg-glow {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.bg-glow::before {
+  content: "";
+  position: absolute;
+  top: -30%;
+  left: -15%;
+  width: 60%;
+  height: 60%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(91,141,239,0.04) 0%, transparent 70%);
+}
+.bg-glow::after {
+  content: "";
+  position: absolute;
+  bottom: -25%;
+  right: -15%;
+  width: 50%;
+  height: 50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(118,89,213,0.03) 0%, transparent 70%);
+}
+
+/* Shared card style */
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+}
+
+/* Input fields */
+.input-field {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(17, 26, 46, 0.8);
+  border: 1px solid rgba(56, 73, 113, 0.35);
+  color: #e2e7f0;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  resize: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input-field::placeholder {
+  color: var(--subtle);
+}
+.input-field:focus {
+  outline: none;
+  border-color: rgba(91,141,239,0.45);
+  box-shadow: 0 0 0 2px rgba(91,141,239,0.1);
+}
+
+/* Button */
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(91,141,239,0.15);
+  cursor: pointer;
+  border: none;
+}
+.btn-primary:hover {
+  background: #6d9af2;
+  box-shadow: 0 4px 16px rgba(91,141,239,0.25);
+}
+.btn-primary:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+@keyframes drawStrand {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes fadeSlideUp {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;

@@ -5,68 +5,58 @@ interface PredictionResultProps {
   label: string;
 }
 
-export default function PredictionResult({
-  prediction,
-  label,
-}: PredictionResultProps) {
+export default function PredictionResult({ prediction, label }: PredictionResultProps) {
   const isPathogenic = label === "Pathogenic";
   const confidence = isPathogenic ? prediction : 1 - prediction;
+  const accentColor = isPathogenic ? "#f87171" : "#4ade80";
 
   return (
     <div
-      className={`rounded-xl p-6 border backdrop-blur-sm animate-[fadeSlideUp_0.5s_ease-out_both] ${
-        isPathogenic
-          ? "border-red-500/20 bg-red-950/10"
-          : "border-emerald-500/20 bg-emerald-950/10"
-      }`}
+      className="card p-5 animate-[fadeSlideUp_0.4s_ease-out_both]"
+      style={{ borderColor: isPathogenic ? "rgba(248,113,113,0.2)" : "rgba(74,222,128,0.2)" }}
     >
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs uppercase tracking-wider text-slate-500 mb-1">
+          <p className="text-[10px] uppercase tracking-widest font-medium mb-1" style={{ color: "var(--muted)" }}>
             Prediction
           </p>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <span
-              className={`h-3 w-3 rounded-full ${
-                isPathogenic ? "bg-red-500 shadow-lg shadow-red-500/50" : "bg-emerald-500 shadow-lg shadow-emerald-500/50"
-              }`}
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: accentColor, boxShadow: `0 0 8px ${accentColor}60` }}
             />
-            <p
-              className={`text-3xl font-bold ${
-                isPathogenic ? "text-red-400" : "text-emerald-400"
-              }`}
-            >
+            <p className="text-2xl font-bold tracking-tight" style={{ color: accentColor }}>
               {label}
             </p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-xs uppercase tracking-wider text-slate-500 mb-1">
+          <p className="text-[10px] uppercase tracking-widest font-medium mb-1" style={{ color: "var(--muted)" }}>
             Confidence
           </p>
-          <p className="text-3xl font-bold tabular-nums text-slate-200">
+          <p className="text-2xl font-bold tabular-nums" style={{ color: "var(--foreground)" }}>
             {(confidence * 100).toFixed(1)}%
           </p>
         </div>
       </div>
 
-      {/* Probability bar */}
-      <div className="mt-6">
-        <div className="flex justify-between text-xs text-slate-500 mb-1.5">
+      <div className="mt-5">
+        <div className="flex justify-between text-[10px] mb-1" style={{ color: "var(--muted)" }}>
           <span>Benign</span>
           <span>Pathogenic</span>
         </div>
-        <div className="h-2 bg-slate-700/50 rounded-full overflow-hidden">
+        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(56,73,113,0.3)" }}>
           <div
-            className={`h-full rounded-full transition-all duration-700 ease-out ${
-              isPathogenic
-                ? "bg-gradient-to-r from-red-600 to-red-400"
-                : "bg-gradient-to-r from-emerald-600 to-emerald-400"
-            }`}
-            style={{ width: `${prediction * 100}%` }}
+            className="h-full rounded-full transition-all duration-700 ease-out"
+            style={{
+              width: `${prediction * 100}%`,
+              background: isPathogenic
+                ? "linear-gradient(to right, #dc2626, #f87171)"
+                : "linear-gradient(to right, #059669, #4ade80)",
+            }}
           />
         </div>
-        <p className="text-xs text-slate-600 mt-1.5 text-center">
+        <p className="text-[10px] mt-1 text-center font-mono" style={{ color: "var(--subtle)" }}>
           P(pathogenic) = {prediction.toFixed(4)}
         </p>
       </div>
