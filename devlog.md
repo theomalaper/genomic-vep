@@ -84,3 +84,24 @@ Splitting frontend work into a git worktree so it can proceed in parallel withou
 **Next:** Day 5 — evaluation metrics on the test set, then wire dashboard components to `/predict`.
 
 
+## Day 5 — 2026-04-13 (Portfolio Rigor Pass)
+
+**What happened:**
+Training still running on Colab (epoch 5, val AUROC 0.8194, still climbing). Spent the day on everything around the model while blocked on the checkpoint.
+
+**Completed:**
+- Real held-out ClinVar examples wired into the frontend (pulled from `test.parquet`) with a "✓ Correct / ✗ Incorrect — ground truth: X" banner on the result.
+- Model card page at `/model` — intended use, data, procedure, performance, limitations (ancestry bias, scope, calibration not verified), ethics.
+- README rewrite: sharper pitch, real split sizes, key design decisions, limitations. Dropped the autoresearch framing.
+- Sticky top nav + shared footer aligned via `max-w-4xl`. Both pages share the same width.
+- Removed the ambient background glow. Flat `#070d1a` is more modern.
+- Splash animation now only plays on first JS load — module-level `splashPlayed` flag, resets on hard reload, not on in-app nav.
+
+**Key decision:**
+Work on rigor *before* training finishes. Most of what matters to a recruiter (README, model card, limitations, deploy) doesn't need a final checkpoint.
+
+**Lesson learned:**
+The gap between "side project" and "serious project" is almost entirely around the model, not in it.
+
+**Next:** Finish training, full test-set eval, calibration plot, CADD baseline, HF Spaces deploy.
+
