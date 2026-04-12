@@ -62,3 +62,25 @@ Always save checkpoints every epoch on Colab — sessions die without warning. S
 
 **Next:** Day 4 — FastAPI backend + Next.js frontend.
 
+
+## Day 4 — 2026-04-12 (Backend + Frontend Scaffold)
+
+**What happened:**
+Shifted from training to serving. Scaffolded the FastAPI inference backend and bootstrapped the Next.js frontend so the interpretability work has somewhere to live.
+
+**Completed:**
+- `src/api/server.py` — FastAPI app with CORS, lazy interpreter init, `/predict` and `/health` endpoints. Auto-selects CUDA → MPS → CPU at startup
+- `PredictionResponse` schema returns prediction probability, label, and per-token attributions for both ref and alt sequences
+- Reused `VariantInterpreter` (captum integrated gradients) directly — no duplication of model loading logic
+- `frontend/` — Next.js 16 + React 19 + Tailwind v4 scaffolded via `create-next-app`
+- Fixed a couple of lint issues in `src/model/interpret.py` surfaced while wiring the interpreter into the API
+
+**Key decision:**
+Kept the backend dumb — one endpoint, no batching, no caching. The autoresearch wrapper (Part 2) is the place for complex inference orchestration; Part 1 just needs something the dashboard can call.
+
+**Lesson learned:**
+Splitting frontend work into a git worktree so it can proceed in parallel without stepping on backend edits. Worth the five minutes of setup.
+
+**Next:** Day 5 — evaluation metrics on the test set, then wire dashboard components to `/predict`.
+
+

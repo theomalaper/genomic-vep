@@ -80,6 +80,14 @@ python src/data/prepare_dataset.py
 python src/model/train.py
 ```
 
+### Inference API
+
+```bash
+# Serve predictions + attributions from a trained checkpoint
+uvicorn src.api.server:app --reload
+# POST /predict  { ref_seq, alt_seq } → { prediction, label, attributions, ... }
+```
+
 ### Dashboard
 
 ```bash
@@ -96,14 +104,14 @@ genomic-vep/
 │   ├── data/
 │   │   ├── download_clinvar.py      # Download + parse ClinVar VCF
 │   │   ├── download_reference.py    # Download GRCh38 reference genome
-│   │   └── prepare_dataset.py       # Extract DNA windows, split by chromosome
+│   │   ├── prepare_dataset.py       # Extract DNA windows, split by chromosome
+│   │   └── dataset.py               # PyTorch Dataset + DataLoader
 │   ├── model/
-│   │   ├── dataset.py               # PyTorch Dataset class
 │   │   ├── classifier.py            # NT-v2 + classification head
 │   │   ├── train.py                 # Fine-tuning script
-│   │   └── evaluate.py              # Metrics + plots
-│   └── interpret/
-│       └── attributions.py          # Integrated gradients
+│   │   └── interpret.py             # Integrated gradients (captum)
+│   └── api/
+│       └── server.py                # FastAPI inference endpoint
 ├── autoresearch-dash/               # Part 2: autoresearch wrapper
 │   ├── server.py
 │   ├── watcher.py
