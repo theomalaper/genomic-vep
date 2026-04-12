@@ -2,16 +2,19 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import AttributionHeatmap from "./components/AttributionHeatmap";
-import DnaHelix from "./components/DnaHelix";
 import ExampleVariants from "./components/ExampleVariants";
 import MetricsPanel from "./components/MetricsPanel";
 import PredictionResult from "./components/PredictionResult";
 import ResultSkeleton from "./components/ResultSkeleton";
 import SequenceDiff from "./components/SequenceDiff";
 import SplashAnimation from "./components/SplashAnimation";
+import type { RealExample } from "./components/realExamples";
+import Link from "next/link";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const MOCK = process.env.NEXT_PUBLIC_MOCK === "true";
+
+let splashPlayed = false;
 
 interface PredictionData {
   prediction: number;
@@ -110,14 +113,18 @@ function AttributionSummary({ tokens, attributions, label }: { tokens: string[];
 }
 
 export default function Home() {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(!splashPlayed);
   const [refSeq, setRefSeq] = useState("");
   const [altSeq, setAltSeq] = useState("");
   const [result, setResult] = useState<PredictionData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expectedLabel, setExpectedLabel] = useState<"Pathogenic" | "Benign" | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
-  const handleSplashComplete = useCallback(() => setShowSplash(false), []);
+  const handleSplashComplete = useCallback(() => {
+    splashPlayed = true;
+    setShowSplash(false);
+  }, []);
 
   useEffect(() => {
     if (result) {
@@ -173,9 +180,10 @@ export default function Home() {
     }
   }
 
-  function handleExampleSelect(ref: string, alt: string) {
-    setRefSeq(ref);
-    setAltSeq(alt);
+  function handleExampleSelect(example: RealExample) {
+    setRefSeq(example.refSeq);
+    setAltSeq(example.altSeq);
+    setExpectedLabel(example.trueLabel);
     setResult(null);
     setError(null);
   }
@@ -183,33 +191,41 @@ export default function Home() {
   return (
     <>
       {showSplash && <SplashAnimation onComplete={handleSplashComplete} />}
-      <div className="bg-glow" />
       <main className={`flex-1 max-w-4xl mx-auto w-full px-6 py-14 ${showSplash ? "opacity-0" : "animate-[fadeSlideUp_0.6s_ease-out_both]"}`}>
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <DnaHelix className="h-9 w-9" />
-            <h1 className="text-3xl font-bold tracking-tight text-white">
-              Genomic VEP
-            </h1>
-          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-white mb-2">
+            Genomic VEP
+          </h1>
           <p className="text-sm leading-relaxed max-w-xl" style={{ color: "var(--foreground)" }}>
             Predict variant pathogenicity with a fine-tuned Nucleotide Transformer
             and per-token interpretability via Integrated Gradients.
           </p>
           <div className="flex gap-3 mt-3 text-[10px]" style={{ color: "var(--muted)" }}>
-            <span className="flex items-center gap-1.5">
+            <Link
+              href="/model"
+              className="flex items-center gap-1.5 hover:text-white transition-colors"
+              title="See model card"
+            >
               <span className="h-1 w-1 rounded-full" style={{ background: "var(--accent)" }} />
               NT-v2 50M
-            </span>
-            <span className="flex items-center gap-1.5">
+            </Link>
+            <Link
+              href="/model"
+              className="flex items-center gap-1.5 hover:text-white transition-colors"
+              title="See model card"
+            >
               <span className="h-1 w-1 rounded-full" style={{ background: "#7b6cf0" }} />
               Integrated Gradients
-            </span>
-            <span className="flex items-center gap-1.5">
+            </Link>
+            <Link
+              href="/model"
+              className="flex items-center gap-1.5 hover:text-white transition-colors"
+              title="See model card"
+            >
               <span className="h-1 w-1 rounded-full" style={{ background: "#4ade80" }} />
               ClinVar trained
-            </span>
+            </Link>
           </div>
         </div>
 
@@ -237,7 +253,7 @@ export default function Home() {
               <textarea
                 id="ref-seq"
                 value={refSeq}
-                onChange={(e) => setRefSeq(e.target.value)}
+                onChange={(e) => { setRefSeq(e.target.value); setExpectedLabel(null); }}
                 placeholder="ATCGATCGATCG..."
                 className="input-field h-20 pr-16"
               />
@@ -257,7 +273,7 @@ export default function Home() {
               <textarea
                 id="alt-seq"
                 value={altSeq}
-                onChange={(e) => setAltSeq(e.target.value)}
+                onChange={(e) => { setAltSeq(e.target.value); setExpectedLabel(null); }}
                 placeholder="ATCGATCAATCG..."
                 className="input-field h-20 pr-16"
               />
@@ -313,6 +329,21 @@ export default function Home() {
           {result && (
             <>
               <PredictionResult prediction={result.prediction} label={result.label} />
+              {expectedLabel && (
+                <div
+                  className="px-4 py-2.5 rounded-lg text-[11px] flex items-center gap-2 animate-[fadeSlideUp_0.4s_ease-out_0.1s_both]"
+                  style={{
+                    background: result.label === expectedLabel ? "rgba(74,222,128,0.08)" : "rgba(239,68,68,0.08)",
+                    border: `1px solid ${result.label === expectedLabel ? "rgba(74,222,128,0.25)" : "rgba(239,68,68,0.25)"}`,
+                    color: result.label === expectedLabel ? "#4ade80" : "#f87171",
+                  }}
+                >
+                  <span className="font-semibold">{result.label === expectedLabel ? "✓ Correct" : "✗ Incorrect"}</span>
+                  <span style={{ color: "var(--muted)" }}>
+                    — ground truth (ClinVar): <span style={{ color: "var(--foreground)" }}>{expectedLabel}</span>
+                  </span>
+                </div>
+              )}
               <div className="card p-5 animate-[fadeSlideUp_0.4s_ease-out_0.2s_both]">
                 <AttributionHeatmap tokens={result.alt_tokens} attributions={result.attributions} />
                 <AttributionSummary tokens={result.alt_tokens} attributions={result.attributions} label={result.label} />
@@ -321,27 +352,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* Footer */}
-        <div className="mt-14 pt-6 text-center text-[10px]" style={{ borderTop: "1px solid var(--card-border)", color: "var(--subtle)" }}>
-          <p>
-            Built with Nucleotide Transformer v2 &middot; Trained on ClinVar
-            &middot; Not for clinical use
-          </p>
-          <a
-            href="https://github.com/theomalaper/genomic-vep"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 mt-1.5 transition-colors"
-            style={{ color: "var(--muted)" }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--foreground)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--muted)"; }}
-          >
-            <svg className="h-3 w-3" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z" />
-            </svg>
-            Source
-          </a>
-        </div>
       </main>
     </>
   );

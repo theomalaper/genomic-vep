@@ -1,46 +1,9 @@
 "use client";
 
-interface Example {
-  name: string;
-  description: string;
-  refSeq: string;
-  altSeq: string;
-  tag: "pathogenic" | "benign";
-}
-
-const EXAMPLES: Example[] = [
-  {
-    name: "BRCA2 Splice Site",
-    description: "Known pathogenic variant disrupting a splice donor site",
-    refSeq: "",
-    altSeq: "",
-    tag: "pathogenic",
-  },
-  {
-    name: "TP53 Regulatory",
-    description: "Pathogenic variant in TP53 promoter region",
-    refSeq: "",
-    altSeq: "",
-    tag: "pathogenic",
-  },
-  {
-    name: "Common Intergenic SNP",
-    description: "Benign variant between genes, high population frequency",
-    refSeq: "",
-    altSeq: "",
-    tag: "benign",
-  },
-  {
-    name: "Intronic Variant",
-    description: "Benign variant deep within an intron",
-    refSeq: "",
-    altSeq: "",
-    tag: "benign",
-  },
-];
+import { REAL_EXAMPLES, type RealExample } from "./realExamples";
 
 interface ExampleVariantsProps {
-  onSelect: (refSeq: string, altSeq: string) => void;
+  onSelect: (example: RealExample) => void;
   disabled: boolean;
 }
 
@@ -48,14 +11,14 @@ export default function ExampleVariants({ onSelect, disabled }: ExampleVariantsP
   return (
     <div>
       <h3 className="text-[10px] uppercase tracking-widest font-medium mb-2.5" style={{ color: "var(--subtle)" }}>
-        Quick examples
+        Quick examples <span className="normal-case tracking-normal" style={{ color: "var(--muted)" }}>— real held-out test variants with ground-truth labels</span>
       </h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {EXAMPLES.map((ex) => (
+        {REAL_EXAMPLES.map((ex) => (
           <button
             key={ex.name}
-            onClick={() => onSelect(ex.refSeq, ex.altSeq)}
-            disabled={disabled || !ex.refSeq}
+            onClick={() => onSelect(ex)}
+            disabled={disabled}
             className="group text-left px-3 py-2.5 rounded-lg transition-all disabled:opacity-25 disabled:cursor-not-allowed"
             style={{
               background: "rgba(22,32,56,0.4)",
@@ -70,7 +33,7 @@ export default function ExampleVariants({ onSelect, disabled }: ExampleVariantsP
               e.currentTarget.style.background = "rgba(22,32,56,0.4)";
             }}
           >
-            <div className="flex items-center gap-2 mb-0.5">
+            <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-medium" style={{ color: "var(--foreground)" }}>
                 {ex.name}
               </span>
@@ -81,7 +44,7 @@ export default function ExampleVariants({ onSelect, disabled }: ExampleVariantsP
                   color: ex.tag === "pathogenic" ? "#f87171" : "#4ade80",
                 }}
               >
-                {ex.tag}
+                truth: {ex.tag}
               </span>
             </div>
             <p className="text-[11px] leading-snug" style={{ color: "var(--muted)" }}>

@@ -1,149 +1,176 @@
-# genomic-vep
+# Genomic VEP
 
-A non-coding variant effect predictor that fine-tunes [Nucleotide Transformer v2](https://huggingface.co/InstaDeepAI/nucleotide-transformer-v2-50m-multi-species) on [ClinVar](https://www.ncbi.nlm.nih.gov/clinvar/) data to predict whether DNA variants are pathogenic or benign — with interpretability showing *which sequence features* drive each prediction.
+**Variant Effect Predictor with interpretability.** Fine-tunes the [Nucleotide Transformer v2](https://huggingface.co/InstaDeepAI/nucleotide-transformer-v2-50m-multi-species) genomic foundation model on [ClinVar](https://www.ncbi.nlm.nih.gov/clinvar/) to classify DNA variants as pathogenic or benign, then uses [Integrated Gradients](https://arxiv.org/abs/1703.01365) to show *which sequence tokens* drove each prediction.
 
-Part 2 wraps the fine-tuning pipeline with [Karpathy's autoresearch](https://github.com/karpathy/autoresearch) loop, enabling autonomous overnight optimization of the model.
+Full stack: PyTorch training pipeline → FastAPI inference server → Next.js dashboard with per-token attribution heatmap.
+
+> **Live demo:** _coming soon (HF Spaces)_ · **Model card:** [/model](frontend/src/app/model) · **Dev log:** [devlog.md](devlog.md)
+
+---
 
 ## Why This Matters
 
-Over 90% of disease-linked genetic variants are in **non-coding DNA** — the vast majority of the genome that doesn't directly code for proteins. For most of these variants, we don't know if they're harmful or harmless. This project tackles that problem using a genomic foundation model with explainable predictions.
+Over 90% of disease-linked genetic variants sit in **non-coding DNA** — the part of the genome that doesn't code for proteins, and that classical variant effect tools struggle with. Pathogenicity classification for non-coding variants is an open problem, and one that genomic foundation models (NT-v2, Evo, HyenaDNA) were built to tackle.
+
+This project is a minimal, end-to-end working example of that approach: load a pre-trained genomic LM, freeze its weights, train a small classification head on real ClinVar data, and expose the predictions through an interpretable web interface a non-specialist can use.
+
+---
+
+## Results
+
+| Metric          | Value  | Notes                              |
+| --------------- | ------ | ---------------------------------- |
+| Test AUROC      | ~0.82  | N=63,014 held-out variants         |
+| Test size       | 63,014 | Chromosome-split, no leakage       |
+| Train size      | 264,241 | 31% pathogenic / 69% benign       |
+| Trainable params | ~197k | Head only — encoder frozen         |
+| Inference latency | ~250ms | Single variant, CPU (M1)          |
+
+Metrics updated live from the trained checkpoint. See [`results/`](results/) for full eval output.
+
+**Ground-truth verification:** the frontend ships with 4 real held-out test variants with their ClinVar labels, so you can see the model's prediction agree (or disagree) with the true label directly in the UI.
+
+---
 
 ## Architecture
 
 ```
-ClinVar (labeled variants) + GRCh38 (reference genome)
-        |
-        v
-  Data pipeline (extract 1000bp DNA windows around each variant)
-        |
-        v
-  Nucleotide Transformer v2 (pre-trained, frozen)
-  Encodes ref sequence and alt sequence into embeddings
-        |
-        v
-  Classification head (trainable)
-  Embedding difference → pathogenic / benign prediction
-        |
-        v
-  Interpretability (integrated gradients)
-  Per-base attribution scores → which bases drove the prediction
-        |
-        v
-  Dashboard (Next.js)
-  Input a variant → see prediction + confidence + sequence attribution heatmap
+ClinVar variants ─┐
+                  ├──▶ extract 1000bp ref/alt windows ──▶ train/val/test splits
+GRCh38 genome ────┘                                             │
+                                                                ▼
+                              Nucleotide Transformer v2 (frozen, 50M params)
+                                  │                        │
+                             ref embedding            alt embedding
+                                  │                        │
+                                  └──── mean-pool, diff ────┘
+                                              │
+                                     Classification head (768 → 256 → 1)
+                                              │
+                                     pathogenic / benign + probability
+                                              │
+                             ┌────────────────┴────────────────┐
+                             ▼                                 ▼
+                Integrated Gradients                     FastAPI /predict
+                  (per-token attribution)                        │
+                             │                                   ▼
+                             └──────────────────▶ Next.js dashboard
 ```
 
-## Results
+**Key design decisions:**
 
-*Coming soon — model training in progress.*
+- **Frozen encoder.** Fine-tuning all 50M params on 264k samples overfits fast and costs a lot of GPU time. Freezing and training a small head (~197k params) gives better generalization and ~30× faster training.
+- **Embedding difference (alt − ref).** Isolates the mutation signal from the background sequence context. Without it, the head mostly learns "what sequence class this is" rather than "what changed".
+- **Mean pooling.** Hidden states per token → single 768-dim vector. Simple, strong baseline.
+- **Integrated Gradients, not attention.** IG gives axiom-satisfying attributions that account for model nonlinearities; raw attention is noisy and not faithful to the prediction.
+- **Chromosome-level split.** Prevents variant-level leakage between train and test — a common bug in naive ClinVar splits that inflates reported AUROC.
 
-<!-- After training, add:
-- AUROC score
-- Example predictions with interpretability visualizations
-- Screenshot of the dashboard
--->
+---
 
-## Setup
-
-### Prerequisites
-- Python 3.10+
-- Node.js 18+ (for the dashboard)
-- HuggingFace account (free, for model access)
-
-### Installation
-
-```bash
-git clone https://github.com/YOUR_USERNAME/genomic-vep.git
-cd genomic-vep
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-### Data Preparation
-
-```bash
-# Download ClinVar variants (~80MB)
-python src/data/download_clinvar.py
-
-# Download reference genome (~1GB)
-python src/data/download_reference.py
-
-# Extract DNA windows and split into train/val/test
-python src/data/prepare_dataset.py
-```
-
-### Training
-
-```bash
-# Fine-tune NT-v2 on the variant dataset (requires GPU — use Colab or similar)
-python src/model/train.py
-```
-
-### Inference API
-
-```bash
-# Serve predictions + attributions from a trained checkpoint
-uvicorn src.api.server:app --reload
-# POST /predict  { ref_seq, alt_seq } → { prediction, label, attributions, ... }
-```
-
-### Dashboard
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## Project Structure
+## Repo Layout
 
 ```
 genomic-vep/
 ├── src/
-│   ├── data/
-│   │   ├── download_clinvar.py      # Download + parse ClinVar VCF
-│   │   ├── download_reference.py    # Download GRCh38 reference genome
-│   │   ├── prepare_dataset.py       # Extract DNA windows, split by chromosome
-│   │   └── dataset.py               # PyTorch Dataset + DataLoader
+│   ├── data/                  # ClinVar download, GRCh38 window extraction, PyTorch dataset
 │   ├── model/
-│   │   ├── classifier.py            # NT-v2 + classification head
-│   │   ├── train.py                 # Fine-tuning script
-│   │   └── interpret.py             # Integrated gradients (captum)
+│   │   ├── classifier.py      # NT-v2 + frozen encoder + classification head
+│   │   ├── train.py           # Full training loop with auto-resume
+│   │   └── interpret.py       # Integrated Gradients via captum
 │   └── api/
-│       └── server.py                # FastAPI inference endpoint
-├── autoresearch-dash/               # Part 2: autoresearch wrapper
-│   ├── server.py
-│   ├── watcher.py
-│   └── agent_runner.py
-├── frontend/                        # Next.js dashboard
-├── results/                         # Committed results + screenshots
-├── data/                            # gitignored — downloaded data files
-├── TODO.md                          # Build checklist
-├── concepts.md                      # Learning guide for genomic ML concepts
-├── devlog.md                        # Daily build journal
-└── requirements.txt
+│       └── server.py          # FastAPI /predict endpoint
+├── frontend/                  # Next.js 16 + Tailwind v4 dashboard
+│   └── src/app/
+│       ├── page.tsx           # Main predictor UI
+│       └── components/
+│           ├── AttributionHeatmap.tsx
+│           ├── MetricsPanel.tsx
+│           ├── PredictionResult.tsx
+│           └── realExamples.ts   # 4 real held-out test variants
+├── data/                      # gitignored — ClinVar VCF, GRCh38, parquet splits
+├── notebooks/                 # Colab training notebook
+├── results/                   # Metrics, screenshots, eval output
+└── devlog.md                  # Daily build journal
 ```
+
+---
+
+## Quickstart
+
+### Prerequisites
+
+- Python 3.10+
+- Node 18+
+- 1 GPU for training (Colab T4/A100 works), CPU for inference
+- HuggingFace account (free, for NT-v2 access)
+
+### Install
+
+```bash
+git clone https://github.com/theomalaper/genomic-vep.git
+cd genomic-vep
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Data prep
+
+```bash
+python src/data/download_clinvar.py     # ~80MB
+python src/data/download_reference.py   # ~1GB (GRCh38)
+python src/data/prepare_dataset.py      # → data/{train,val,test}.parquet
+```
+
+### Train
+
+Use `notebooks/train_colab.ipynb` on Colab (auto-resumes from `latest.pth` / `best.pth`). Local training:
+
+```bash
+python src/model/train.py
+```
+
+### Serve
+
+```bash
+# Backend
+uvicorn src.api.server:app --reload --port 8000
+
+# Frontend
+cd frontend && npm install && npm run dev
+```
+
+Open `http://localhost:3000`, click a quick example, hit predict.
+
+---
 
 ## Tech Stack
 
-| Layer | Tools |
-|---|---|
-| Pre-trained model | Nucleotide Transformer v2 50M (HuggingFace) |
-| Data | ClinVar, GRCh38 reference genome |
-| Training | PyTorch, HuggingFace Transformers |
-| Interpretability | captum (integrated gradients) |
-| Backend | FastAPI |
-| Frontend | Next.js 14, Tailwind CSS, Recharts |
-| Autonomous optimization | Karpathy's autoresearch (Part 2) |
+| Layer              | Tools                                                        |
+| ------------------ | ------------------------------------------------------------ |
+| Pretrained model   | Nucleotide Transformer v2 50M (HuggingFace, InstaDeepAI)     |
+| Data               | ClinVar (NCBI) + GRCh38 reference genome                     |
+| Training           | PyTorch, HuggingFace Transformers, Weights & Biases          |
+| Interpretability   | captum (Integrated Gradients)                                |
+| Backend            | FastAPI, Uvicorn                                             |
+| Frontend           | Next.js 16, React 19, Tailwind CSS v4                        |
+
+---
+
+## Limitations
+
+- Trained on ClinVar, which overrepresents European-ancestry variants and well-studied genes. Performance on underrepresented populations and novel genes is likely worse.
+- Single-nucleotide substitutions only; no indels, CNVs, or structural variants.
+- 1001bp context window centered on the variant; deeper intronic and long-range regulatory effects are partially out of scope.
+- Not validated against functional assays (MPRA, CRISPR screens).
+- **Not for clinical use** — research and educational purposes only.
+
+See the [model card](frontend/src/app/model) for full documentation.
+
+---
 
 ## Context
 
-This project complements [dermSAM](https://github.com/YOUR_USERNAME/dermSAM) (medical image segmentation) as part of a portfolio targeting health tech startups. Together they cover two different modalities — computer vision and genomic sequence modeling — demonstrating versatility across the biomedical AI stack.
-
-## Dev Log
-
-See [devlog.md](devlog.md) for a daily journal of the build process.
+Part of a health-tech-focused ML portfolio alongside [dermSAM](https://github.com/theomalaper/dermSAM) (medical image segmentation). Together they cover vision and sequence modeling, two of the dominant modalities in biomedical AI.
 
 ## License
 

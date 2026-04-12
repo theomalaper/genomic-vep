@@ -23,35 +23,6 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
-/* Ambient glow */
-.bg-glow {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  overflow: hidden;
-  pointer-events: none;
-}
-.bg-glow::before {
-  content: "";
-  position: absolute;
-  top: -30%;
-  left: -15%;
-  width: 60%;
-  height: 60%;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(91,141,239,0.04) 0%, transparent 70%);
-}
-.bg-glow::after {
-  content: "";
-  position: absolute;
-  bottom: -25%;
-  right: -15%;
-  width: 50%;
-  height: 50%;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(118,89,213,0.03) 0%, transparent 70%);
-}
-
 /* Shared card style */
 .card {
   background: var(--card);
