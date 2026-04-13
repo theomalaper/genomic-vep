@@ -95,7 +95,7 @@ def train(
     else:
         print("No checkpoint found, training from scratch")
 
-    for epoch in range(start_epoch + 1, start_epoch + epochs + 1):
+    for epoch in range(start_epoch + 1, epochs + 1):
         # --- Training ---
         model.train()
         total_loss = 0.0
